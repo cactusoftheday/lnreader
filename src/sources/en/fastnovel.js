@@ -14,7 +14,7 @@ const popularNovels = async page => {
 
   let novels = [];
 
-  loadedCheerio('.col-novel-main .list-novel .row').each(function () {
+  loadedCheerio('.list-novel .row').each(function () {
     const novelName = loadedCheerio(this).find('h3.novel-title > a').text();
     const novelCover = loadedCheerio(this).find('img.cover').attr('src');
     const novelUrl = loadedCheerio(this)
@@ -53,26 +53,28 @@ const parseNovelAndChapters = async novelUrl => {
 
   novel.summary = loadedCheerio('div.desc-text').text().trim();
 
-  loadedCheerio('ul.info > li > h3').each(function () {
-    let detailName = loadedCheerio(this).text();
-    let detail = loadedCheerio(this)
-      .siblings()
-      .map((i, el) => loadedCheerio(el).text())
-      .toArray()
-      .join(',');
+  novel.author = loadedCheerio('ul.info > li > h3')
+    .filter(function () {
+      return loadedCheerio(this).text().trim() === 'Author:';
+    })
+    .siblings()
+    .text();
+  novel.genre = loadedCheerio('ul.info > li')
+    .filter(function () {
+      return loadedCheerio(this).find('h3').text().trim() === 'Genre:';
+    })
+    .text()
+    .trim()
+    .replace('Genre:', '')
+    .trim();
 
-    switch (detailName) {
-      case 'Author:':
-        novel.author = detail;
-        break;
-      case 'Status:':
-        novel.status = detail;
-        break;
-      case 'Genre:':
-        novel.genre = detail;
-        break;
-    }
-  });
+  novel.status = loadedCheerio('ul.info > li > h3')
+    .filter(function () {
+      return loadedCheerio(this).text().trim() === 'Status:';
+    })
+    .next()
+    .text();
+
   const novelId = loadedCheerio('#rating').attr('data-novel-id');
 
   const getChapters = async id => {
@@ -117,7 +119,6 @@ const parseChapter = async (novelUrl, chapterUrl) => {
 
   const chapterName = loadedCheerio('.chr-text').text();
 
-  loadedCheerio('#chr-content > div,h6,p[style="display: none;"]').remove();
   let chapterText = loadedCheerio('#chr-content').html();
   const chapter = {
     sourceId,
@@ -138,12 +139,13 @@ const searchNovels = async searchTerm => {
 
   let novels = [];
 
-  loadedCheerio('.col-novel-main .list-novel .row').each(function () {
-    const novelName = loadedCheerio(this).find('h3.novel-title > a').text();
-    const novelCover = loadedCheerio(this).find('img').attr('src');
+  loadedCheerio('div.col-novel-main > div.list-novel > .row').each(function () {
     const novelUrl = loadedCheerio(this)
       .find('h3.novel-title > a')
       .attr('href');
+
+    const novelName = loadedCheerio(this).find('h3.novel-title > a').text();
+    const novelCover = loadedCheerio(this).find('img').attr('src');
 
     if (novelUrl) {
       novels.push({

@@ -1,59 +1,23 @@
 import * as cheerio from 'cheerio';
 import QueryString from 'qs';
 
-import { fetchHtml } from '@utils/fetch/fetch';
-
-import { FilterInputs } from '../../types/filterTypes';
-
 class ReadwnScraper {
-  constructor(sourceId, baseUrl, sourceName, genres) {
+  constructor(sourceId, baseUrl, sourceName) {
     this.sourceId = sourceId;
     this.baseUrl = baseUrl;
     this.sourceName = sourceName;
-    this.filters = [
-      {
-        key: 'sort',
-        label: 'Sort By',
-        values: [
-          { label: 'New', value: 'newstime' },
-          { label: 'Popular', value: 'onclick' },
-          { label: 'Updates', value: 'lastdotime' },
-        ],
-        inputType: FilterInputs.Picker,
-      },
-      {
-        key: 'status',
-        label: 'Status',
-        values: [
-          { label: 'All', value: 'all' },
-          { label: 'Completed', value: 'Completed' },
-          { label: 'Ongoing', value: 'Ongoing' },
-        ],
-        inputType: FilterInputs.Picker,
-      },
-      {
-        key: 'genres',
-        label: genres.label,
-        values: genres.values,
-        inputType: FilterInputs.Picker,
-      },
-    ];
   }
 
-  async popularNovels(page, { showLatestNovels, filters }) {
+  async popularNovels(page) {
     const baseUrl = this.baseUrl;
     const sourceId = this.sourceId;
 
     const pageNo = page - 1;
 
-    let url = baseUrl + 'list/';
-    url += (filters?.genres || 'all') + '/';
-    url += (filters?.status || 'all') + '-';
-    url +=
-      (showLatestNovels ? 'lastdotime' : filters?.sort || 'newstime') + '-';
-    url += pageNo + '.html';
+    const url = `${baseUrl}list/all/all-onclick-${pageNo}.html`;
 
-    const body = await fetchHtml({ url, sourceId });
+    const result = await fetch(url);
+    const body = await result.text();
 
     const loadedCheerio = cheerio.load(body);
 
@@ -84,7 +48,8 @@ class ReadwnScraper {
 
     const url = novelUrl;
 
-    const body = await fetchHtml({ url, sourceId });
+    const result = await fetch(url);
+    const body = await result.text();
 
     let loadedCheerio = cheerio.load(body);
 
@@ -174,7 +139,8 @@ class ReadwnScraper {
     const url = baseUrl + chapterUrl;
     const sourceId = this.sourceId;
 
-    const body = await fetchHtml({ url, sourceId });
+    const result = await fetch(url);
+    const body = await result.text();
 
     const loadedCheerio = cheerio.load(body);
 
@@ -197,25 +163,23 @@ class ReadwnScraper {
     const sourceId = this.sourceId;
     const searchUrl = `${baseUrl}e/search/index.php`;
 
-    const body = await fetchHtml({
-      url: searchUrl,
-      init: {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Referer: `${baseUrl}search.html`,
-          Origin: baseUrl,
-          'user-agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36',
-        },
-        method: 'POST',
-        body: QueryString.stringify({
-          show: 'title',
-          tempid: 1,
-          tbname: 'news',
-          keyboard: searchTerm,
-        }),
+    const result = await fetch(searchUrl, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Referer: `${baseUrl}search.html`,
+        Origin: baseUrl,
+        'user-agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36',
       },
+      method: 'POST',
+      body: QueryString.stringify({
+        show: 'title',
+        tempid: 1,
+        tbname: 'news',
+        keyboard: searchTerm,
+      }),
     });
+    const body = await result.text();
 
     const loadedCheerio = cheerio.load(body);
 

@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   row: {
-    flexShrink: 1,
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
   },

@@ -172,15 +172,10 @@ class MadaraScraper {
 
       let chapterUrl = loadedCheerio(this).find('a').attr('href').split('/');
 
-      if (novel.sourceId === 59) {
-        chapterUrl[7]
-          ? (chapterUrl = chapterUrl[6] + '/' + chapterUrl[7])
-          : (chapterUrl = chapterUrl[6]);
-      } else {
-        chapterUrl[6]
-          ? (chapterUrl = chapterUrl[5] + '/' + chapterUrl[6])
-          : (chapterUrl = chapterUrl[5]);
-      }
+      chapterUrl[6]
+        ? (chapterUrl = chapterUrl[5] + '/' + chapterUrl[6])
+        : (chapterUrl = chapterUrl[5]);
+
       novelChapters.push({ chapterName, releaseDate, chapterUrl });
     });
 

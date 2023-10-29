@@ -156,8 +156,6 @@ export interface StringMap {
   'moreScreen.settingsScreen.readerSettings.notSaved': 'string';
   'moreScreen.settingsScreen.readerSettings.cssHint': 'string';
   'moreScreen.settingsScreen.readerSettings.jsHint': 'string';
-  'moreScreen.settingsScreen.readerSettings.clearCustomCSS': 'string';
-  'moreScreen.settingsScreen.readerSettings.clearCustomJS': 'string';
   'moreScreen.settingsScreen.browseSettings': 'string';
   'moreScreen.settingsScreen.browseSettingsScreen.onlyShowPinnedSources': 'string';
   'moreScreen.settingsScreen.browseSettingsScreen.languages': 'string';

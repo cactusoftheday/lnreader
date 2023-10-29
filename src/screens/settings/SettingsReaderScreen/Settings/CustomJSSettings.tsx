@@ -1,16 +1,15 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Portal } from 'react-native-paper';
+import { StyleSheet, TextInput, View } from 'react-native';
+import React, { useState } from 'react';
 
-import { Button, List, ConfirmationDialog } from '@components/index';
+import { Button, List } from '@components/index';
 
-import useBoolean from '@hooks/useBoolean';
-import { useTheme } from '@hooks/useTheme';
 import { useAppDispatch, useReaderSettings } from '@redux/hooks';
-import { setReaderSettings } from '@redux/settings/settings.actions';
+import { useTheme } from '@hooks/useTheme';
 import { getString } from '@strings/translations';
-
+import { setReaderSettings } from '@redux/settings/settings.actions';
+import { Portal } from 'react-native-paper';
 import CustomFileModal from '../Modals/CustomFileModal';
+import useBoolean from '@hooks/useBoolean';
 
 interface CustomJSSettingsProps {
   readerSettings: ReturnType<typeof useReaderSettings>;
@@ -22,8 +21,8 @@ const CustomJSSettings: React.FC<CustomJSSettingsProps> = ({
   const theme = useTheme();
   const dispatch = useAppDispatch();
 
+  const [customJS, setCustomJS] = useState(readerSettings.customJS);
   const jsModal = useBoolean();
-  const clearJSModal = useBoolean();
 
   return (
     <>
@@ -31,11 +30,21 @@ const CustomJSSettings: React.FC<CustomJSSettingsProps> = ({
         <List.SubHeader theme={theme}>
           {getString('moreScreen.settingsScreen.readerSettings.customJS')}
         </List.SubHeader>
+        <List.SubHeader theme={theme}>
+          {readerSettings.customJS !== customJS
+            ? getString('moreScreen.settingsScreen.readerSettings.notSaved')
+            : null}
+        </List.SubHeader>
       </View>
       <View style={styles.customJSContainer}>
-        <Text numberOfLines={3} style={[{ color: theme.onSurface }]}>
-          {readerSettings.customJS || 'Example: body {margin: 10px;}'}
-        </Text>
+        <TextInput
+          style={[{ color: theme.onSurface }, styles.fontSizeL]}
+          value={customJS}
+          placeholderTextColor={theme.onSurfaceVariant}
+          placeholder="Example: document.getElementById('example');"
+          multiline={true}
+          editable={false}
+        />
         <View style={styles.customJSButtons}>
           <Button
             onPress={jsModal.setTrue}
@@ -43,39 +52,30 @@ const CustomJSSettings: React.FC<CustomJSSettingsProps> = ({
             title={getString('common.edit')}
           />
           <Button
-            onPress={clearJSModal.setTrue}
+            onPress={() => {
+              setCustomJS('');
+              dispatch(setReaderSettings('customJS', ''));
+            }}
             title={getString('common.clear')}
           />
         </View>
       </View>
-
-      {/* Modals */}
+      {/*
+            Modals
+        */}
       <Portal>
         <CustomFileModal
+          title={getString('moreScreen.settingsScreen.readerSettings.customJS')}
           visible={jsModal.value}
           onDismiss={jsModal.setFalse}
-          defaultValue={readerSettings.customJS}
-          mimeType="application/javascript"
-          title={getString('moreScreen.settingsScreen.readerSettings.customJS')}
-          description={getString(
-            'moreScreen.settingsScreen.readerSettings.jsHint',
-          )}
-          placeholder="Example: document.getElementById('example');"
-          openFileLabel={getString(
+          theme={theme}
+          customFile={customJS}
+          setCustomFile={setCustomJS}
+          type="JS"
+          openFileButtonLabel={getString(
             'moreScreen.settingsScreen.readerSettings.openJSFile',
           )}
-          onSave={text => dispatch(setReaderSettings('customJS', text))}
-        />
-        <ConfirmationDialog
-          title={getString(
-            'moreScreen.settingsScreen.readerSettings.clearCustomJS',
-          )}
-          visible={clearJSModal.value}
-          onSubmit={() => {
-            dispatch(setReaderSettings('customJS', ''));
-          }}
-          onDismiss={clearJSModal.setFalse}
-          theme={theme}
+          placeholder="Example: document.getElementById('example');"
         />
       </Portal>
     </>

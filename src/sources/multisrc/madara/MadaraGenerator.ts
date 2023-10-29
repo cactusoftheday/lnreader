@@ -22,7 +22,7 @@ export const NovelTranslateScraper = new MadaraScraper(
   42,
   'https://noveltranslate.com/',
   'NovelTranslate',
-  { 'path': { 'novels': 'all-novels', 'novel': 'novel', 'chapter': 'novel' } },
+  { 'path': { 'novels': 'all-novels', 'novel': 'manga', 'chapter': 'manga' } },
 );
 
 export const LunarLettersScraper = new MadaraScraper(
@@ -95,15 +95,7 @@ export const ArNovelScraper = new MadaraScraper(
   59,
   'https://arnovel.me/',
   'ArNovel',
-  {
-    'path': {
-      'novels': 'home/novel',
-      'novel': 'home/novel',
-      'chapter': 'home/novel',
-    },
-    'useNewChapterEndpoint': true,
-    'lang': 'Arabic',
-  },
+  { 'useNewChapterEndpoint': true, 'lang': 'Arabic' },
 );
 
 export const MeioNovelScraper = new MadaraScraper(
@@ -178,7 +170,7 @@ export const OnlyMTLScraper = new MadaraScraper(
 
 export const HizoMangaScraper = new MadaraScraper(
   96,
-  'https://hizomanga.net/',
+  'https://hizomanga.com/',
   'HizoManga',
   {
     'path': { 'novels': 'serie', 'novel': 'serie', 'chapter': 'serie' },

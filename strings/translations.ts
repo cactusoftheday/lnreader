@@ -13,16 +13,14 @@ dayjs.extend(localizedFormat);
 dayjs.extend(relativeTime);
 dayjs.extend(calendar);
 
-import 'dayjs/locale/ar';
-import 'dayjs/locale/de';
 import 'dayjs/locale/es';
-import 'dayjs/locale/it';
-import 'dayjs/locale/ja';
-import 'dayjs/locale/pt';
-import 'dayjs/locale/ru';
 import 'dayjs/locale/tr';
+import 'dayjs/locale/ru';
+import 'dayjs/locale/ar';
 import 'dayjs/locale/uk';
-import 'dayjs/locale/vi';
+import 'dayjs/locale/pt';
+import 'dayjs/locale/de';
+import 'dayjs/locale/it';
 import 'dayjs/locale/zh';
 
 import ar from './languages/ar_SA/strings.json';
@@ -44,20 +42,20 @@ import { StringMap } from './types';
 
 i18n.fallbacks = true;
 i18n.translations = {
-  ar,
-  de,
   en,
   es,
-  it,
-  ja,
+  tr,
+  ru,
+  ar,
+  uk,
   pt,
   'pt-BR': ptBr,
-  ru,
-  tr,
-  uk,
-  vi,
+  de,
+  it,
   'zh-CN': zhCn,
   'zh-TW': zhTw,
+  vi,
+  ja,
 };
 i18n.locale = Localization.locale;
 dayjs.locale(Localization.locale);

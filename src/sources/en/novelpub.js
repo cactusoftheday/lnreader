@@ -1,6 +1,4 @@
 import * as cheerio from 'cheerio';
-import { fetchHtml } from '@utils/fetch/fetch';
-
 const baseUrl = 'https://www.novelpub.com/';
 
 const sourceName = 'NovelPub';
@@ -16,11 +14,8 @@ const headers = new Headers({
 const popularNovels = async page => {
   let url = baseUrl + 'browse/all/popular/all/' + page;
 
-  const body = await fetchHtml({
-    url,
-    sourceId,
-    init: { headers: { 'User-Agent': userAgent } },
-  });
+  const result = await fetch(url, { method: 'GET', headers });
+  const body = await result.text();
 
   const loadedCheerio = cheerio.load(body);
 
@@ -46,11 +41,8 @@ const popularNovels = async page => {
 const parseNovelAndChapters = async novelUrl => {
   const url = novelUrl;
 
-  const body = await fetchHtml({
-    url,
-    sourceId,
-    init: { headers: { 'User-Agent': userAgent } },
-  });
+  const result = await fetch(url, { method: 'GET', headers });
+  const body = await result.text();
 
   let loadedCheerio = cheerio.load(body);
 
@@ -133,12 +125,9 @@ const parseNovelAndChapters = async novelUrl => {
 const parseChapter = async (novelUrl, chapterUrl) => {
   const url = chapterUrl;
 
-  const body = await fetchHtml({
-    url,
-    sourceId,
-    init: { headers: { 'User-Agent': userAgent } },
-  });
+  const result = await fetch(url, { method: 'GET', headers });
 
+  const body = await result.text();
   const loadedCheerio = cheerio.load(body);
 
   const chapterName = loadedCheerio('h2').text();
@@ -152,11 +141,8 @@ const parseChapter = async (novelUrl, chapterUrl) => {
 const searchNovels = async searchTerm => {
   const url = `${baseUrl}lnwsearchlive?inputContent=${searchTerm}`;
 
-  const body = await fetchHtml({
-    url,
-    sourceId,
-    init: { headers: { 'User-Agent': userAgent } },
-  });
+  const result = await fetch(url, { method: 'GET', headers });
+  const body = await result.text();
 
   let loadedCheerio = cheerio.load(body);
 

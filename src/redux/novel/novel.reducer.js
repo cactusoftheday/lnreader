@@ -2,7 +2,6 @@ import {
   CHAPTER_DOWNLOADING,
   CHAPTER_DOWNLOADED,
   CHAPTER_DELETED,
-  ALL_CHAPTER_DELETED,
   GET_CHAPTERS,
   LOADING_NOVEL,
   GET_NOVEL,
@@ -118,7 +117,7 @@ const novelReducer = (state = initialState, action) => {
             : chapter,
         ),
       };
-    case ALL_CHAPTER_DELETED:
+    case CHAPTER_DELETED:
       return {
         ...state,
         chapters: state.chapters.map(chapter => ({
