@@ -73,7 +73,7 @@ def extract_and_save_chapter_metadata(book, output_folder):
             })
             i = i + 1
 
-    chapter_metadata_filename = os.path.join(output_folder, 'chapter_metadata.json')
+    chapter_metadata_filename = os.path.join(output_folder, 'metadata.json')
 
     with open(chapter_metadata_filename, 'w', encoding='utf-8') as metadata_file:
         json.dump(chapter_metadata, metadata_file, indent=4, ensure_ascii=False)
@@ -108,7 +108,8 @@ def cleanTitle(dir_name):
 def parseEpub(epub_path, dest_dir):
     book = epub.read_epub(epub_path)
     name = book.get_metadata('DC', 'title')[0][0] if book.get_metadata('DC', 'title') else 'Unknown EPUB'
-    output_folder = dest_dir + "convertedEpubs/" + cleanTitle(name) + "/"
+    output_folder = dest_dir + "convertedEpubs/" + cleanTitle(name)
     extract_cover_image(book, output_folder)
     extract_and_save_chapters(book, output_folder)
     extract_and_save_chapter_metadata(book, output_folder)
+    return output_folder
