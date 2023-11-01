@@ -1,19 +1,72 @@
 import json
 import os
+import zipfile
+
 import ebooklib
 from ebooklib import epub
+import xml.etree.ElementTree as ET
 import re
 
-# Function to extract the cover image
-def extract_cover_image(book, output_folder):
-    cover_images = list(book.get_items_of_type(ebooklib.ITEM_COVER))
-    if cover_images:
-        cover_image_filename = os.path.join(output_folder, 'cover.jpg')
-        with open(cover_image_filename, 'wb') as cover_file:
-            cover_file.write(cover_images[0].get_content())
+from lxml import etree
+
+namespaces = {
+    'calibre': 'http://calibre.kovidgoyal.net/2009/metadata',
+    'dc': 'http://purl.org/dc/elements/1.1/',
+    'dcterms': 'http://purl.org/dc/terms/',
+    'opf': 'http://www.idpf.org/2007/opf',
+    'ncx': 'http://www.daisy.org/z3986/2005/ncx/',
+    'u': 'urn:oasis:names:tc:opendocument:xmlns:container',
+    'xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+    'xhtml': 'http://www.w3.org/1999/xhtml'
+}
+
+def getCover(epub_path):
+    with zipfile.ZipFile(epub_path) as z:
+        for filename in z.namelist():
+            if (filename.endswith('opf')):
+                contentOPF = filename  # search for opf file
+
+        tree = etree.XML(z.read(contentOPF))
+        coverHREF = None
+
+        try:
+            coverID = tree.xpath("//opf:metadata/opf:meta[@name='cover']", namespaces=namespaces)[0].get('content')
+            # print('coverID 2', coverID)  # now we know where the cover image is located
+            coverHREF = tree.xpath("//opf:manifest/opf:item[@id='" + coverID + "']", namespaces=namespaces)[0].get(
+                'href')
+
+        except IndexError:  # not an EPUB 2.0
+            # print('EPUB 2 failure')
+            pass
+
+        if not coverHREF:  # try EPUB 3.0
+            try:
+                coverHREF = tree.xpath("//opf:manifest/opf:item[@properties='cover-image']", namespaces=namespaces)[
+                    0].get('href')
+            except IndexError:
+                # print('EPUB 3 failure')
+                pass
+        elif not coverHREF:  # some EPUBs don't explicitly declare cover images
+            try:
+                coverID = tree.xpath("//opf:spine/open:itemref[@idref='cover']", namespaces=namespaces)[0].get('idref')
+                temp = tree.xpath("//opf:manifest/opf:item[@id='" + coverID + "']", namespaces=namespaces)[0].get(
+                    'href')
+
+                tree = etree.fromstring(z.read(temp))
+                coverHREF = tree.xpath('//xhtml:img', namespaces=namespaces)[0].get('src')
+            except IndexError:
+                print('Edge case failure')
+        elif not coverHREF:
+            # print('No cover found')
+            return None
+
+        coverPath = coverHREF.replace('\\', '/')
+        # print('coverPath', coverPath)
+
+        return coverPath if os.path.dirname(contentOPF) == 0 else os.path.dirname(contentOPF) + '/' + coverPath
 
 # Function to save content to a file
-def save_content_to_file(content, filename):
+def saveContentToFile(content, filename):
     # Ensure the directory where the file will be saved exists
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
@@ -21,14 +74,14 @@ def save_content_to_file(content, filename):
     with open(filename, 'wb') as file:
         file.write(content)
 
-def ensure_directory_exists(directory):
+def ensureDirExists(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
 # Function to extract text and images from chapters
-def extract_and_save_chapters(book, output_folder):
+def extractAndSaveChapters(book, output_folder):
     # Create the output folder if it doesn't exist
-    ensure_directory_exists(output_folder)
+    ensureDirExists(output_folder)
 
     # Iterate through all the items in the book
     for item in book.get_items():
@@ -38,7 +91,7 @@ def extract_and_save_chapters(book, output_folder):
 
             # Extract and save the content to a file
             chapter_filename = os.path.join(output_folder, item.get_name()).replace("\\","/")
-            save_content_to_file(content, chapter_filename)
+            saveContentToFile(content, chapter_filename)
         elif item.get_type() == ebooklib.ITEM_IMAGE:
             # Handle image items (if needed)
             img_filename = item.get_name()
@@ -46,14 +99,32 @@ def extract_and_save_chapters(book, output_folder):
 
             if img_content:
                 img_path = os.path.join(output_folder, img_filename)
-                save_content_to_file(img_content, img_path)
+                saveContentToFile(img_content, img_path)
+        elif item.get_type() == ebooklib.ITEM_STYLE:
+            saveContentToFile(item.get_content(), os.path.join(output_folder,item.get_name()))
+        elif item.get_type() == ebooklib.ITEM_FONT:
+            #print("font")
+            saveContentToFile(item.get_content(), os.path.join(output_folder,item.get_name()))
+        elif item.get_type() == ebooklib.ITEM_NAVIGATION:
+            tree = ET.ElementTree(ET.fromstring(item.get_content()))
+            root = tree.getroot()
+            chapterDict = {}
+            for navPoint in root.iter('{http://www.daisy.org/z3986/2005/ncx/}navPoint'):
+                # Extract the chapter title and content (file name)
+                chapter_title = navPoint.find('{http://www.daisy.org/z3986/2005/ncx/}navLabel/{http://www.daisy.org/z3986/2005/ncx/}text').text
+                chapter_content = navPoint.find('{http://www.daisy.org/z3986/2005/ncx/}content').get('src')
+                #print(chapter_title, chapter_content)
+                chapterDict[chapter_title] = chapter_content
+
+    return chapterDict
+    # There may be more than just fonts and styles however I don't want to extract everything else
 
 # Function to extract and save chapter metadata to a JSON file
-def extract_and_save_chapter_metadata(book, output_folder):
+def saveMetadata(book, output_folder, epub_path, chapterDict):
     chapter_metadata = {
         'url': output_folder,
         'title': book.get_metadata('DC', 'title')[0][0] if book.get_metadata('DC', 'title') else '',
-        'cover': 'OEBPS/Images/CoverDesign.jpg',  # Replace with the actual cover path
+        'cover': getCover(epub_path),  # Replace with the actual cover path
         'genre': 'light novel',  # Replace with the genre
         'summary': 'N/A',  # Replace with the summary
         'authors': book.get_metadata('DC', 'creator')[0][0] if book.get_metadata('DC', 'creator') else '',
@@ -67,10 +138,18 @@ def extract_and_save_chapter_metadata(book, output_folder):
         if item.media_type == 'application/xhtml+xml':
             # Extract chapter title from HTML content
             # chapter_title = extract_chapter_title(item) if extract_chapter_title(item) != 0 else "Unknown chapter" + i
-            chapter_metadata['chapters'].append({
-                'name': "Chapter " + str(i),
-                'path': item.file_name
-            })
+            fileName = item.file_name
+            matchingChapter = [(key, value) for (key, value) in chapterDict.items() if fileName in value]
+            if len(matchingChapter) > 0:
+                chapter_metadata['chapters'].append({
+                    'name': matchingChapter[0][0],
+                    'path': fileName
+                })
+            else:
+                chapter_metadata['chapters'].append({
+                    'name': "Unnamed Chapter " + str(i),
+                    'path': fileName
+                })
             i = i + 1
 
     chapter_metadata_filename = os.path.join(output_folder, 'metadata.json')
@@ -79,7 +158,7 @@ def extract_and_save_chapter_metadata(book, output_folder):
         json.dump(chapter_metadata, metadata_file, indent=4, ensure_ascii=False)
 
 # Function to extract chapter title from HTML content
-def extract_chapter_title(html_item):
+def extractChapterTitle(html_item):
     # You may need to implement a more sophisticated logic here
     # to extract chapter titles from the HTML content.
     # This is a simple example, and it may not work for all EPUBs.
@@ -105,11 +184,11 @@ def cleanTitle(dir_name):
     clean_dir_name = re.sub(pattern, '', dir_name)
     return clean_dir_name
 
+
 def parseEpub(epub_path, dest_dir):
     book = epub.read_epub(epub_path)
     name = book.get_metadata('DC', 'title')[0][0] if book.get_metadata('DC', 'title') else 'Unknown EPUB'
     output_folder = dest_dir + "convertedEpubs/" + cleanTitle(name)
-    extract_cover_image(book, output_folder)
-    extract_and_save_chapters(book, output_folder)
-    extract_and_save_chapter_metadata(book, output_folder)
+    chapterDict = extractAndSaveChapters(book, output_folder)
+    saveMetadata(book, output_folder, epub_path, chapterDict)
     return output_folder
